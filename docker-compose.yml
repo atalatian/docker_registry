@@ -1,0 +1,20 @@
+services:
+  registry:
+    image: registry:2
+    container_name: docker-registry
+    ports:
+      - "5000:5000"
+    environment:
+      REGISTRY_AUTH: htpasswd
+      REGISTRY_AUTH_HTPASSWD_REALM: Docker Registry
+      REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
+      REGISTRY_HTTP_ADDR: 0.0.0.0:5000
+      REGISTRY_STORAGE_DELETE_ENABLED: true
+      REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /data
+    volumes:
+      - registry-data:/data
+      - ./auth:/auth
+    restart: unless-stopped
+
+volumes:
+  registry-data:
