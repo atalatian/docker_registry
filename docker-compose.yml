@@ -16,5 +16,29 @@ services:
       - ./auth:/auth
     restart: unless-stopped
 
+  registry-ui:
+    image: joxit/docker-registry-ui:latest
+    container_name: registry-ui
+    ports:
+      - "3000:80"
+    environment:
+      SINGLE_REGISTRY: true
+      REGISTRY_TITLE: My Docker Registry
+      DELETE_IMAGES: true
+      NGINX_PROXY_PASS_URL: http://registry:5000
+      REGISTRY_SECURED: false
+    depends_on:
+      - registry
+    restart: unless-stopped
+
+  registry-gc:
+    image: registry:2
+    container_name: registry-gc
+    profiles: ["tools"]
+    entrypoint: ["registry", "garbage-collect", "--delete-untagged", "/etc/docker/registry/config.yml"]
+    environment:
+      REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /data
+    volumes:
+      - registry-data:/data
 volumes:
   registry-data:
