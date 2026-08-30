@@ -10,9 +10,16 @@ services:
       REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
       REGISTRY_HTTP_ADDR: 0.0.0.0:5000
       REGISTRY_STORAGE_DELETE_ENABLED: true
-      REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /data
+      REGISTRY_STORAGE: s3
+      REGISTRY_STORAGE_S3_BUCKET: ${S3_BUCKET}
+      REGISTRY_STORAGE_S3_REGION: ${S3_REGION:-us-east-1}
+      REGISTRY_STORAGE_S3_ACCESSKEY: ${S3_ACCESS_KEY}
+      REGISTRY_STORAGE_S3_SECRETKEY: ${S3_SECRET_KEY}
+      REGISTRY_STORAGE_S3_REGIONENDPOINT: ${S3_ENDPOINT:-}
+      REGISTRY_STORAGE_S3_FORCEPATHSTYLE: ${S3_FORCEPATHSTYLE:-true}
+      REGISTRY_STORAGE_S3_SECURE: ${S3_SECURE:-true}
+      REGISTRY_STORAGE_S3_ROOTDIRECTORY: ${S3_ROOTDIRECTORY:-/}
     volumes:
-      - registry-data:/data
       - ./auth:/auth
     restart: unless-stopped
 
@@ -35,10 +42,20 @@ services:
     image: registry:2
     container_name: registry-gc
     profiles: ["tools"]
-    entrypoint: ["registry", "garbage-collect", "--delete-untagged", "/etc/docker/registry/config.yml"]
+    entrypoint:
+      [
+        "registry",
+        "garbage-collect",
+        "--delete-untagged",
+        "/etc/docker/registry/config.yml",
+      ]
     environment:
-      REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /data
-    volumes:
-      - registry-data:/data
-volumes:
-  registry-data:
+      REGISTRY_STORAGE: s3
+      REGISTRY_STORAGE_S3_BUCKET: ${S3_BUCKET}
+      REGISTRY_STORAGE_S3_REGION: ${S3_REGION:-us-east-1}
+      REGISTRY_STORAGE_S3_ACCESSKEY: ${S3_ACCESS_KEY}
+      REGISTRY_STORAGE_S3_SECRETKEY: ${S3_SECRET_KEY}
+      REGISTRY_STORAGE_S3_REGIONENDPOINT: ${S3_ENDPOINT:-}
+      REGISTRY_STORAGE_S3_FORCEPATHSTYLE: ${S3_FORCEPATHSTYLE:-true}
+      REGISTRY_STORAGE_S3_SECURE: ${S3_SECURE:-true}
+      REGISTRY_STORAGE_S3_ROOTDIRECTORY: ${S3_ROOTDIRECTORY:-/}
