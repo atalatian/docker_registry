@@ -1,0 +1,15 @@
+version: 1
+creds:
+  - registry: "${SRC_REGISTRY}"
+    tls: "${SRC_TLS}"
+    user: "${SRC_USER}"
+    pass: "${SRC_PASSWORD}"
+  - registry: "${DST_REGISTRY}"
+    tls: "${DST_TLS}"
+    user: "${DST_USER}"
+    pass: "${DST_PASSWORD}"
+
+sync:
+  - source: "${SRC_REGISTRY}"
+    target: "${DST_REGISTRY}"
+    type: registry
