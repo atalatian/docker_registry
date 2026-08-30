@@ -80,28 +80,26 @@ services:
       - |
         set -e
 
-        for var in SRC_REGISTRY SRC_IMAGE SRC_TAG DST_REGISTRY; do
-          if [ -z "$($var)" ]; then
-            echo "ERROR: $var is required but not set" >&2
-            exit 1
-          fi
-        done
+        : "$${SRC_REGISTRY:?SRC_REGISTRY is required but not set}"
+        : "$${SRC_IMAGE:?SRC_IMAGE is required but not set}"
+        : "$${SRC_TAG:?SRC_TAG is required but not set}"
+        : "$${DST_REGISTRY:?DST_REGISTRY is required but not set}"
 
-        echo "Copying $SRC_IMAGE:$SRC_TAG from $SRC_REGISTRY to $DST_REGISTRY"
+        echo "Copying $$SRC_IMAGE:$$SRC_TAG from $$SRC_REGISTRY to $$DST_REGISTRY"
 
         SRC_TLS_VERIFY=true
         DST_TLS_VERIFY=true
 
-        [ "$SRC_SCHEME" = "http" ] && SRC_TLS_VERIFY=false
-        [ "$DST_SCHEME" = "http" ] && DST_TLS_VERIFY=false
+        [ "$$SRC_SCHEME" = "http" ] && SRC_TLS_VERIFY=false
+        [ "$$DST_SCHEME" = "http" ] && DST_TLS_VERIFY=false
 
         skopeo copy \
-          --src-tls-verify="$SRC_TLS_VERIFY" \
-          --dest-tls-verify="$DST_TLS_VERIFY" \
-          --src-creds "$SRC_USER:$SRC_PASSWORD" \
-          --dest-creds "$DST_USER:$DST_PASSWORD" \
-          "docker://$SRC_REGISTRY/$SRC_IMAGE:$SRC_TAG" \
-          "docker://$DST_REGISTRY/$SRC_IMAGE:$SRC_TAG"
+          --src-tls-verify="$$SRC_TLS_VERIFY" \
+          --dest-tls-verify="$$DST_TLS_VERIFY" \
+          --src-creds "$$SRC_USER:$$SRC_PASSWORD" \
+          --dest-creds "$$DST_USER:$$DST_PASSWORD" \
+          "docker://$$SRC_REGISTRY/$$SRC_IMAGE:$$SRC_TAG" \
+          "docker://$$DST_REGISTRY/$$SRC_IMAGE:$$SRC_TAG"
     restart: "no"
 
   image-copy-hourly:
