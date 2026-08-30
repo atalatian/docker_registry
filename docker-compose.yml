@@ -3,7 +3,7 @@ services:
     image: registry:2
     container_name: docker-registry
     ports:
-      - "5000:5000"
+      - "{REGISTRY_PORT:-5000}:5000"
     environment:
       REGISTRY_AUTH: htpasswd
       REGISTRY_AUTH_HTPASSWD_REALM: Docker Registry
@@ -59,3 +59,66 @@ services:
       REGISTRY_STORAGE_S3_FORCEPATHSTYLE: ${S3_FORCEPATHSTYLE:-true}
       REGISTRY_STORAGE_S3_SECURE: ${S3_SECURE:-true}
       REGISTRY_STORAGE_S3_ROOTDIRECTORY: ${S3_ROOTDIRECTORY:?}
+
+  image-copy:
+    image: quay.io/skopeo/skopeo:latest
+    container_name: registry-image-copy
+    profiles: ["tools"]
+    environment:
+      SRC_REGISTRY: "${SRC_REGISTRY}"
+      SRC_IMAGE: "${SRC_IMAGE}"
+      SRC_TAG: "${SRC_TAG}"
+      SRC_USER: "${SRC_USER:-}"
+      SRC_PASSWORD: "${SRC_PASSWORD:-}"
+      DST_REGISTRY: "${DST_REGISTRY}"
+      DST_SCHEME: "${DST_SCHEME:-https}"
+      DST_USER: "${DST_USER:-}"
+      DST_PASSWORD: "${DST_PASSWORD:-}"
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        set -e
+        for var in SRC_REGISTRY SRC_IMAGE SRC_TAG DST_REGISTRY; do
+          if [ -z "${!var}" ]; then
+            echo "ERROR: $var is required but not set" >&2
+            exit 1
+          fi
+        done
+        echo "Copying $SRC_IMAGE:$SRC_TAG from $SRC_REGISTRY to $SRC_IMAGE:$SRC_TAG at $DST_REGISTRY"
+        skopeo copy \
+          --src-creds "$SRC_USER:$SRC_PASSWORD" \
+          --dest-creds "$DST_USER:$DST_PASSWORD" \
+          "docker://$SRC_REGISTRY/$SRC_IMAGE:$SRC_TAG" \
+          "docker://$DST_SCHEME://$DST_REGISTRY/$SRC_IMAGE:$SRC_TAG"
+    restart: "no"
+
+  image-copy-hourly:
+    image: quay.io/skopeo/skopeo:latest
+    container_name: registry-image-copy-hourly
+    environment:
+      SRC_REGISTRY: "${SRC_REGISTRY:?}"
+      SRC_USER: "${SRC_USER:-}"
+      SRC_PASSWORD: "${SRC_PASSWORD:-}"
+      DST_REGISTRY: "${DST_REGISTRY:?}"
+      DST_SCHEME: "${DST_SCHEME:-https}"
+      DST_USER: "${DST_USER:-}"
+      DST_PASSWORD: "${DST_PASSWORD:-}"
+      COPY_INTERVAL: "${COPY_INTERVAL:-3600}"
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        echo "Starting hourly sync of all images from $SRC_REGISTRY to $DST_REGISTRY every ${COPY_INTERVAL}s"
+        while true; do
+          echo "[$(date)] Syncing all images from $SRC_REGISTRY to $DST_REGISTRY"
+          skopeo sync \
+            --src docker --dest docker \
+            --src-creds "$SRC_USER:$SRC_PASSWORD" \
+            --dest-creds "$DST_USER:$DST_PASSWORD" \
+            --src-tls-verify=false \
+            --dest-tls-verify=false \
+            "$SRC_REGISTRY" \
+            "$DST_SCHEME://$DST_REGISTRY"
+          echo "[$(date)] Sync finished (exit $?). Sleeping ${COPY_INTERVAL}s..."
+          sleep "$COPY_INTERVAL"
+        done
+    restart: unless-stopped
