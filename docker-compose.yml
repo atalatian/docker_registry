@@ -66,6 +66,7 @@ services:
     profiles: ["tools"]
     environment:
       SRC_REGISTRY: "${SRC_REGISTRY}"
+      SRC_SCHEME: "${SRC_SCHEME:-https}"
       SRC_IMAGE: "${SRC_IMAGE}"
       SRC_TAG: "${SRC_TAG}"
       SRC_USER: "${SRC_USER:-}"
@@ -88,7 +89,7 @@ services:
         skopeo copy \
           --src-creds "$SRC_USER:$SRC_PASSWORD" \
           --dest-creds "$DST_USER:$DST_PASSWORD" \
-          "docker://$SRC_REGISTRY/$SRC_IMAGE:$SRC_TAG" \
+          "docker://$SRC_SCHEME://$SRC_REGISTRY/$SRC_IMAGE:$SRC_TAG" \
           "docker://$DST_SCHEME://$DST_REGISTRY/$SRC_IMAGE:$SRC_TAG"
     restart: "no"
 
