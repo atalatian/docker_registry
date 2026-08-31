@@ -1,15 +1,16 @@
 version: 1
 creds:
-  - registry: "${SRC_REGISTRY}"
-    tls: "${SRC_TLS}"
-    user: "${SRC_USER}"
-    pass: "${SRC_PASSWORD}"
-  - registry: "${DST_REGISTRY}"
-    tls: "${DST_TLS}"
-    user: "${DST_USER}"
-    pass: "${DST_PASSWORD}"
+  - registry: "{{env \"SRC_REGISTRY\"}}"
+    tls: "{{env \"SRC_TLS\"}}"
+    user: "{{env \"SRC_USER\"}}"
+    pass: "{{env \"SRC_PASSWORD\"}}"
+  - registry: "{{env \"DST_REGISTRY\"}}"
+    tls: "{{env \"DST_TLS\"}}"
+    user: "{{env \"DST_USER\"}}"
+    pass: "{{env \"DST_PASSWORD\"}}"
 
 sync:
-  - source: "${SRC_REGISTRY}"
-    target: "${DST_REGISTRY}"
+  - source: "{{env \"SRC_REGISTRY\"}}"
+    target: "{{env \"DST_REGISTRY\"}}"
     type: registry
+    interval: "{{env \"COPY_INTERVAL\"}}"

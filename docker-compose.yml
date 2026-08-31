@@ -65,16 +65,16 @@ services:
     container_name: registry-image-copy
     profiles: ["tools"]
     environment:
-      SRC_REGISTRY: ${SRC_REGISTRY}
-      SRC_SCHEME: ${SRC_SCHEME:-https}
-      SRC_IMAGE: ${SRC_IMAGE}
-      SRC_TAG: ${SRC_TAG}
-      SRC_USER: ${SRC_USER:-}
-      SRC_PASSWORD: ${SRC_PASSWORD:-}
-      DST_REGISTRY: ${DST_REGISTRY}
-      DST_SCHEME: ${DST_SCHEME:-https}
-      DST_USER: ${DST_USER:-}
-      DST_PASSWORD: ${DST_PASSWORD:-}
+      - SRC_REGISTRY
+      - SRC_INSECURE=${SRC_INSECURE:-}
+      - SRC_IMAGE
+      - SRC_TAG
+      - SRC_USER=${SRC_USER:-}
+      - SRC_PASSWORD=${SRC_PASSWORD:-}
+      - DST_REGISTRY
+      - DST_INSECURE=${DST_INSECURE:-}
+      - DST_USER=${DST_USER:-}
+      - DST_PASSWORD=${DST_PASSWORD:-}
     entrypoint: ["sh", "-c"]
     command:
       - |
@@ -84,11 +84,6 @@ services:
         : "$${SRC_IMAGE:?SRC_IMAGE is required but not set}"
         : "$${SRC_TAG:?SRC_TAG is required but not set}"
         : "$${DST_REGISTRY:?DST_REGISTRY is required but not set}"
-
-        SRC_INSECURE=""
-        DST_INSECURE=""
-        [ "$$SRC_SCHEME" = "http" ] && SRC_INSECURE="--insecure"
-        [ "$$DST_SCHEME" = "http" ] && DST_INSECURE="--insecure"
 
         if [ -n "$$SRC_USER" ]; then
           echo "Logging in to $$SRC_REGISTRY"
@@ -107,34 +102,25 @@ services:
           "$$DST_REGISTRY/$$SRC_IMAGE:$$SRC_TAG"
     restart: "no"
 
-  image-sync-hourly:
+  image-auto-sync:
     image: ghcr.io/regclient/regsync:latest
-    container_name: registry-image-sync-hourly
+    container_name: registry-image-auto-sync
     environment:
       SRC_REGISTRY: "${SRC_REGISTRY:?}"
-      SRC_SCHEME: "${SRC_SCHEME:-https}"
+      SRC_TLS: "${SRC_TLS:-enabled}"
       SRC_USER: "${SRC_USER:-}"
       SRC_PASSWORD: "${SRC_PASSWORD:-}"
       DST_REGISTRY: "${DST_REGISTRY:?}"
-      DST_SCHEME: "${DST_SCHEME:-https}"
+      DST_TLS: "${DST_TLS:-enabled}"
       DST_USER: "${DST_USER:-}"
       DST_PASSWORD: "${DST_PASSWORD:-}"
       COPY_INTERVAL: "${COPY_INTERVAL:-3600s}"
     volumes:
-      - ./regsync/regsync.yaml.template:/home/appuser/regsync.yaml.template:ro
+      - ./regsync/regsync.yaml.template:/home/appuser/regsync.yaml:ro
     entrypoint: ["sh", "-c"]
     command:
       - |
         set -e
 
-        SRC_TLS="enabled"
-        DST_TLS="enabled"
-        [ "$$SRC_SCHEME" = "http" ] && SRC_TLS="disabled"
-        [ "$$DST_SCHEME" = "http" ] && DST_TLS="disabled"
-
-        export SRC_TLS DST_TLS
-
-        envsubst < /home/appuser/regsync.yaml.template > /home/appuser/regsync.yaml
-
-        exec regsync -c /home/appuser/regsync.yaml server -i "$$COPY_INTERVAL"
+        exec regsync -c /home/appuser/regsync.yaml server
     restart: unless-stopped
