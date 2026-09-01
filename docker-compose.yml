@@ -24,7 +24,7 @@ services:
     restart: unless-stopped
 
   registry-ui:
-    image: joxit/docker-registry-ui:latest
+    image: joxit/docker-registry-ui:2.6.0
     container_name: registry-ui
     ports:
       - "${UI_PORT:-3000}:80"
@@ -103,7 +103,7 @@ services:
     restart: "no"
 
   image-auto-sync:
-    image: ghcr.io/regclient/regsync:latest
+    image: ghcr.io/regclient/regsync:v0.11.5
     container_name: registry-image-auto-sync
     environment:
       SRC_REGISTRY: "${SRC_REGISTRY:?}"
